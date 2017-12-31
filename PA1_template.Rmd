@@ -1,25 +1,107 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template"
+author: "TriinKask"
+date: "31 December 2017"
+output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-## Loading and preprocessing the data
+# Programming assignment in Reproducible Research
 
+### First read the file in
+```{r read file, echo=TRUE}
+unzip("repdata_activity.zip")
+data <- read.csv("activity.csv")
+```
 
+### Then create a histogram of sum of steps per day
+```{r histo file, echo=TRUE, fig.height=6, fig.widht=6}
+#Calculate the values
+result <- aggregate(data$steps, by=list(data$date), sum)
+result$x <- as.numeric(as.character(unlist(result$x)))
+result <- na.omit(result)
+colnames(result) <- c("Date","Sum_steps")
+library(ggplot2)
+ggplot(result, aes(x = Date,y = Sum_steps)) + geom_bar(stat = "identity", colour = result$Date, fill = "white" ) + xlab("Date") + ylab("Steps sum count") + ggtitle("Sum of steps per day") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
 
-## What is mean total number of steps taken per day?
+### Then show the mean and median of steps per day
+```{r histo mean and median, echo=TRUE}
+#Calculate the means
+mean_steps <- aggregate(data$steps, by=list(data$date), mean)
+mean_steps <- na.omit(mean_steps)
+colnames(mean_steps) <- c("Date","Mean_steps")
 
+#Calculate medians (medians consider 0-s)
+data$steps <- as.numeric(as.character(unlist(data$steps)))
+median_steps <- aggregate(data$steps, by=list(data$date), median)
+colnames(median_steps) <- c("Date","Median_steps")
+median_steps <- na.omit(median_steps)
 
+#Bind the values to a single data frame.
+results <- cbind(mean_steps, median_steps$Median_steps)
+colnames(results) <- c("Date","Mean steps", "Median steps")
 
-## What is the average daily activity pattern?
+#Show results in a table
+library(knitr)
+kable(results)
+```
 
+### Next calculate the daily activity pattern
+```{r activity pattern, echo=TRUE, fig.height=6, fig.widht=6}
+#Calculate activity
+average <- aggregate(data$steps, by = list(data$interval), mean, na.rm = TRUE)
+colnames(average) <- c("step_interval", "steps")
 
+#Plot averages
+ggplot(data = average, aes(x = step_interval, y = steps)) + geom_line() + xlab("5-minute interval") + ylab("Average number of steps") + ggtitle("Daily activity pattern")
+```
 
-## Imputing missing values
+### Find the maximal value
+```{r activity max, echo=TRUE}
+maximum <- average[which.max(average$steps),]
+maximum
+```
 
+### Find the total number of NAs in this data.frame
+```{r missing values, echo=TRUE}
+count <- is.na(data$steps)
+table(count)
+```
 
+### Fill all the missing values in this dataframe and create a new one
+```{r missing values fill, echo=TRUE, fig.height=6, fig.widht=6}
+#Fill missing values
+data <- read.csv("activity.csv")
+for (i in 1:nrow(data)){
+    if (is.na(data$steps[i])){
+        data$steps[i] <- average$steps[which(data$interval[i] == average$step_interval)]}
+}
+total_steps <- aggregate(data$steps, by = list(data$date), sum, na.rm = TRUE)
+colnames(total_steps) <- c("interval","steps")
 
-## Are there differences in activity patterns between weekdays and weekends?
+#Plot a histogram
+ggplot(total_steps, aes(x = interval, y = steps)) + geom_histogram(stat = "identity") + xlab("5-minute interval") + ylab("Number of steps") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("Total steps per day with filled data")
+```
+
+### Calculated the mean and median or result
+```{r missing mean and result, echo=TRUE}
+values <- as.numeric(as.character(unlist(total_steps$steps)))
+mean(values)
+median(values)
+```
+
+### Show differences between weekdays and weekends
+```{r weekday and weekend, echo=TRUE, fig.height=6, fig.widht=6}
+#New factor - "weekday" and "weekend" as a new column taken from the date
+data$weekdays <- weekdays(as.Date(data$date))
+data$weekdays <- ifelse(data$weekdays %in% c("Saturday", "Sunday"),"weekend", "weekday")
+
+#Plot a histogram
+plotted_data <- data
+average_values <- aggregate(steps ~ interval + weekdays, data = plotted_data, mean)
+ggplot(average_values, aes(interval, steps)) + geom_line(stat= "identity", color = "blue") + facet_grid(weekdays ~ .) + xlab("5-minute interval") + ylab("Number of steps") + geom_smooth(position = "identity", method = "auto")
+```
