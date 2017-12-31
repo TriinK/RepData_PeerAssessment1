@@ -1,8 +1,8 @@
 ---
-title: "PA1_template"
-author: "TriinKask"
+title: "Programming assignment 1"
+author: "Triin Kask"
 date: "31 December 2017"
-output: html_document
+output: md_document
 ---
 
 ```{r setup, include=FALSE}
@@ -30,24 +30,9 @@ ggplot(result, aes(x = Date,y = Sum_steps)) + geom_bar(stat = "identity", colour
 
 ### Then show the mean and median of steps per day
 ```{r histo mean and median, echo=TRUE}
-#Calculate the means
-mean_steps <- aggregate(data$steps, by=list(data$date), mean)
-mean_steps <- na.omit(mean_steps)
-colnames(mean_steps) <- c("Date","Mean_steps")
-
-#Calculate medians (medians consider 0-s)
-data$steps <- as.numeric(as.character(unlist(data$steps)))
-median_steps <- aggregate(data$steps, by=list(data$date), median)
-colnames(median_steps) <- c("Date","Median_steps")
-median_steps <- na.omit(median_steps)
-
-#Bind the values to a single data frame.
-results <- cbind(mean_steps, median_steps$Median_steps)
-colnames(results) <- c("Date","Mean steps", "Median steps")
-
-#Show results in a table
-library(knitr)
-kable(results)
+#Calculate the mean and median
+mean(result$Sum_steps)
+median(result$Sum_steps)
 ```
 
 ### Next calculate the daily activity pattern
